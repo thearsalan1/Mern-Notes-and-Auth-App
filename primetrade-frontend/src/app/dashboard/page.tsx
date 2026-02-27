@@ -10,25 +10,36 @@ interface Note {
   content: string;
 }
 
+interface User {
+  _id: string;
+  email: string;
+  role: string;
+}
+
 export default function DashboardPage() {
   const router = useRouter();
   const [notes, setNotes] = useState<Note[]>([]);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [newNote, setNewNote] = useState({ title: "", content: "" });
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
 
-  const fetchNotes = async () => {
+  const fetchData = async () => {
     try {
       setLoading(true);
-      const res = await api.get("/notes");
-      setNotes(res.data.data || []);
+      const [notesRes, meRes] = await Promise.all([
+        api.get("/notes"),
+        api.get("/auth/me"),
+      ]);
+      setNotes(notesRes.data.data || []);
+      setCurrentUser(meRes.data.data);
     } catch (err: any) {
       if (err.response?.status === 401) {
         router.push("/login");
       } else {
-        setError(err.response?.data?.message || "Failed to load notes");
+        setError(err.response?.data?.message || "Failed to load data");
       }
     } finally {
       setLoading(false);
@@ -36,7 +47,7 @@ export default function DashboardPage() {
   };
 
   useEffect(() => {
-    fetchNotes();
+    fetchData();
   }, []);
 
   const handleCreate = async (e: React.FormEvent) => {
@@ -83,19 +94,34 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Header */}
       <header className="flex items-center justify-between px-8 py-5 border-b border-gray-100">
-        <span className="text-sm font-medium text-gray-900">Primetrade</span>
-        <button
-          onClick={handleLogout}
-          className="text-sm px-4 py-2 text-gray-500 hover:text-gray-900 transition-colors"
-        >
-          Logout
-        </button>
+        <div className="flex items-center gap-3">
+          <span className="text-sm font-medium text-gray-900">Primetrade</span>
+          {currentUser?.role === "admin" && (
+            <span className="text-xs px-2 py-0.5 bg-gray-100 text-gray-500 rounded-full">
+              Admin
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          {currentUser?.role === "admin" && (
+            <button
+              onClick={() => router.push("/admin")}
+              className="text-sm px-4 py-2 border border-gray-200 text-gray-600 rounded-md hover:border-gray-400 hover:text-gray-900 transition-colors"
+            >
+              Admin Panel
+            </button>
+          )}
+          <button
+            onClick={handleLogout}
+            className="text-sm px-4 py-2 text-gray-500 hover:text-gray-900 transition-colors"
+          >
+            Logout
+          </button>
+        </div>
       </header>
 
       <div className="max-w-2xl mx-auto px-6 py-10 space-y-10">
-        {/* Create Note */}
         <div>
           <h2 className="text-sm font-medium text-gray-900 mb-4">New Note</h2>
           <form onSubmit={handleCreate} className="space-y-3">
@@ -112,7 +138,7 @@ export default function DashboardPage() {
               onChange={(e) => setNewNote({ ...newNote, content: e.target.value })}
               required
               rows={3}
-className="w-full px-3 py-2.5 text-sm text-gray-900 border border-gray-200 rounded-md outline-none focus:border-gray-400 transition-colors placeholder:text-gray-400 resize-none"
+              className="w-full px-3 py-2.5 text-sm text-gray-900 border border-gray-200 rounded-md outline-none focus:border-gray-400 transition-colors placeholder:text-gray-400 resize-none"
             />
             <button
               type="submit"
@@ -127,7 +153,6 @@ className="w-full px-3 py-2.5 text-sm text-gray-900 border border-gray-200 round
           {message && <p className="mt-3 text-sm text-green-600">{message}</p>}
         </div>
 
-        {/* Notes List */}
         <div>
           <h2 className="text-sm font-medium text-gray-900 mb-4">
             Your Notes{" "}
