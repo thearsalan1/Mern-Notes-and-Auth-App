@@ -9,7 +9,7 @@ export const register = async (req:Request,res:Response, next: NextFunction
     if(!password || !email || !role){
       return res.status(400).json({success:false,message:"All fields required"})
     }
-    if(password.length!>=6){
+    if(password.length<6){
       return res.status(400).json({success:false,message:"Password must be longer than 6 characters"});
     }
 

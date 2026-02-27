@@ -3,7 +3,7 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import dotenv from "dotenv";
 import { errorHandler } from "./middleware/errorHandler";
-import authRoutes from "./routes/user.routes"
+import apiRoutes from "./routes/index"
 
 dotenv.config();
 
@@ -12,13 +12,14 @@ const app= express();
 app.use(
   cors({
     origin:process.env.CORS_ORIGIN,
-    Credential:true
+    credentials:true
   })
 )
 app.use(express.json())
 app.use(cookieParser());
 
-app.use("/api/auth",authRoutes)
+
+app.use("/api/v1", apiRoutes);
 
 app.get("/health",(req:Request,res:Response)=>{
   res.status(200).json({message:"Server running"})
